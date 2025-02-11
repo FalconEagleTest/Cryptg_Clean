@@ -11,6 +11,9 @@ on:
         required: true
         default: '0.1.0'
 
+permissions:
+  contents: write  # This gives write access to releases and artifacts
+
 jobs:
   build:
     name: Build ${{ matrix.target }}
@@ -107,6 +110,8 @@ jobs:
     
     - name: Create Release
       uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.event.inputs.version || github.ref_name }}
         files: |
