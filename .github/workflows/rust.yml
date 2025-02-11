@@ -75,45 +75,22 @@ jobs:
         fi
       working-directory: cryptg
     
-    - name: Determine Library Extension
-      id: lib-ext
+    - name: Prepare Artifact
       run: |
+        mkdir -p release
         if [[ "${{ matrix.target }}" == *"android"* ]]; then
-          echo "extension=.so" >> $GITHUB_OUTPUT
+          cp target/${{ matrix.target }}/release/libcryptg.so release/libcryptg-${{ matrix.target }}.so
         elif [[ "${{ matrix.target }}" == *"windows"* ]]; then
-          echo "extension=.dll" >> $GITHUB_OUTPUT
-        else
-          echo "extension=.so" >> $GITHUB_OUTPUT
+          cp target/${{ matrix.target }}/release/cryptg.dll release/cryptg-${{ matrix.target }}.dll
         fi
-    
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.target }}-library
-        path: cryptg/target/${{ matrix.target }}/release/*cryptg${{ steps.lib-ext.outputs.extension }}
-        overwrite: true
+      working-directory: cryptg
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: |
-      startsWith(github.ref, 'refs/tags/v') || 
-      github.event_name == 'workflow_dispatch'
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Download Artifacts
-      uses: actions/download-artifact@v4
+    - name: Release
+      uses: ncipollo/release-action@v1
       with:
-        path: artifacts
-    
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.event.inputs.version || github.ref_name }}
-        files: |
-          artifacts/**/*
-        generate_release_notes: true
+        allowUpdates: true
+        tag: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body: Automated release of cryptg libraries
+        token: ${{ secrets.GITHUB_TOKEN }}
+        artifacts: 'cryptg/release/*'
