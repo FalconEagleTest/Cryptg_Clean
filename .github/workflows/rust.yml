@@ -14,7 +14,7 @@ jobs:
           - x86_64-pc-windows-gnu
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Install Rust
       uses: actions-rs/toolchain@v1
@@ -56,7 +56,7 @@ jobs:
         fi
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.target }}-library
         path: target/${{ matrix.target }}/release/libcryptg${{ steps.lib-ext.outputs.extension }}
