@@ -34,20 +34,17 @@ jobs:
         echo '[target.${{ matrix.target }}]
         linker = "${{ matrix.target }}-clang"
         ar = "llvm-ar"' > .cargo/config.toml
+      working-directory: cryptg
     
     - name: Build Project
       run: |
-        # Print current directory and list contents for debugging
-        pwd
-        ls -la
-        
         if [[ "${{ matrix.target }}" == *"android"* ]]; then
           cargo install cargo-ndk
           cargo ndk --target ${{ matrix.target }} build --release
         else
           cargo build --target ${{ matrix.target }} --release
         fi
-      working-directory: ${{ github.workspace }}
+      working-directory: cryptg
     
     - name: Determine Library Extension
       id: lib-ext
@@ -64,5 +61,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.target }}-library
-        path: target/${{ matrix.target }}/release/libcryptg${{ steps.lib-ext.outputs.extension }}
+        path: cryptg/target/${{ matrix.target }}/release/libcryptg${{ steps.lib-ext.outputs.extension }}
         overwrite: true
