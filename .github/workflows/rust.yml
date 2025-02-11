@@ -63,25 +63,20 @@ jobs:
         fi
       working-directory: cryptg
     
-    - name: Find Library
-      id: find-lib
+    - name: Determine Library Extension
+      id: lib-ext
       run: |
-        # For Android and Linux
-        if [[ "${{ matrix.target }}" == *"android"* ]] || [[ "${{ matrix.target }}" == *"linux"* ]]; then
-          lib_path=$(find target/${{ matrix.target }}/release -name "libcryptg.so")
-          echo "path=$lib_path" >> $GITHUB_OUTPUT
+        if [[ "${{ matrix.target }}" == *"android"* ]]; then
           echo "extension=.so" >> $GITHUB_OUTPUT
-        # For Windows
         elif [[ "${{ matrix.target }}" == *"windows"* ]]; then
-          lib_path=$(find target/${{ matrix.target }}/release -name "*.dll")
-          echo "path=$lib_path" >> $GITHUB_OUTPUT
           echo "extension=.dll" >> $GITHUB_OUTPUT
+        else
+          echo "extension=.so" >> $GITHUB_OUTPUT
         fi
-      working-directory: cryptg
     
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.target }}-library
-        path: cryptg/${{ steps.find-lib.outputs.path }}
+        path: cryptg/target/${{ matrix.target }}/release/*cryptg${{ steps.lib-ext.outputs.extension }}
         overwrite: true
