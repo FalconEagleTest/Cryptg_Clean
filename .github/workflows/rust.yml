@@ -1,6 +1,9 @@
-name: Multi-Platform Compilation
+name: Build and Release
 
-on: [push, pull_request]
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags
 
 jobs:
   build:
@@ -80,3 +83,23 @@ jobs:
         name: ${{ matrix.target }}-library
         path: cryptg/target/${{ matrix.target }}/release/*cryptg${{ steps.lib-ext.outputs.extension }}
         overwrite: true
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          artifacts/**/*
+        generate_release_notes: true
