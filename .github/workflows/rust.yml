@@ -16,6 +16,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Install Windows cross-compilation tools
+      if: contains(matrix.target, 'windows')
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-mingw-w64-x86-64
+    
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -36,11 +42,22 @@ jobs:
         ar = "llvm-ar"' > .cargo/config.toml
       working-directory: cryptg
     
+    - name: Prepare Windows Build
+      if: contains(matrix.target, 'windows')
+      run: |
+        mkdir -p .cargo
+        echo '[target.${{ matrix.target }}]
+        linker = "x86_64-w64-mingw32-gcc"
+        ar = "x86_64-w64-mingw32-gcc-ar"' > .cargo/config.toml
+      working-directory: cryptg
+    
     - name: Build Project
       run: |
         if [[ "${{ matrix.target }}" == *"android"* ]]; then
           cargo install cargo-ndk
           cargo ndk --target ${{ matrix.target }} build --release
+        elif [[ "${{ matrix.target }}" == *"windows"* ]]; then
+          cargo build --target ${{ matrix.target }} --release
         else
           cargo build --target ${{ matrix.target }} --release
         fi
