@@ -1,0 +1,62 @@
+name: Multi-Platform Compilation
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: 
+          - x86_64-linux-android
+          - armv7-linux-androideabi
+          - x86_64-pc-windows-gnu
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: ${{ matrix.target }}
+        override: true
+    
+    - name: Install Android NDK (for Android builds)
+      if: contains(matrix.target, 'android')
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r26b
+    
+    - name: Build for ${{ matrix.target }}
+      run: |
+        # For Android builds
+        if [[ "${{ matrix.target }}" == *"android"* ]]; then
+          mkdir -p .cargo
+          echo '[target.${{ matrix.target }}]
+          linker = "${{ matrix.target }}-clang"
+          ar = "llvm-ar"' > .cargo/config.toml
+          
+          # Install cargo-ndk for Android builds
+          cargo install cargo-ndk
+          cargo ndk --target ${{ matrix.target }} build --release
+        else
+          # For Windows cross-compilation
+          cargo build --target ${{ matrix.target }} --release
+        fi
+    
+    - name: Determine library extension
+      id: lib-ext
+      run: |
+        if [[ "${{ matrix.target }}" == *"android"* ]]; then
+          echo "extension=.so" >> $GITHUB_OUTPUT
+        elif [[ "${{ matrix.target }}" == *"windows"* ]]; then
+          echo "extension=.dll" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.target }}-library
+        path: target/${{ matrix.target }}/release/libcryptg${{ steps.lib-ext.outputs.extension }}
